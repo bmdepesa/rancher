@@ -1,0 +1,54 @@
+- job:
+    name: rancher-daily-tests
+    project-type: pipeline
+    parameters:
+      - string:
+          name: PYTEST_OPTIONS
+          default: -k "test_bkp or test_wl or test_dns_record or test_rbac or test_connectivity or test_ingress or test_secrets or test_registry or test_service_discovery"
+      - string: 
+          name: CATTLE_TEST_URL
+          default:
+      - string:
+          name: ADMIN_TOKEN
+          default:
+      - string: 
+          name: RANCHER_CLUSTER_NAME
+          default: user-cluster
+      - string:
+          name: RANCHER_CHECK_FOR_LB
+          default: False
+      - string:
+          name: RANCHER_ENABLE_HOST_NODE_PORT_TESTS
+          default: true
+      - string:
+          name: RANCHER_SKIP_INGRESS
+          default: false
+      - string:
+          name: RANCHER_PROJECT_ISOLATION
+          default: disabled
+      - string:
+          name: RANCHER_REGISTRY_USER_NAME
+          default: 
+      - string:
+          name: RANCHER_REGISTRY_PASSWORD
+          default: 
+      - string:
+          name: RANCHER_TEST_CLIENT_IMAGE
+          default: quay.io/soumyalj/testubuntu
+      - string:
+          name: RANCHER_REGISTRY
+          default: quay.io
+      - string:
+          name: DEBUG
+          default: true
+      - string:
+          name: BRANCH
+          default: master
+    pipeline-scm:
+      scm:
+        - git:
+            url: https://github.com/rancher/rancher
+            branches: 
+              - master
+      script-path: tests/validation/tests/v3_api/Jenkinsfile
+      lightweight-checkout: true
