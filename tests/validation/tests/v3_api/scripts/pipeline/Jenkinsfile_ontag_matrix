@@ -77,13 +77,13 @@ if ( true == via_webhook() && (!(rancher_version ==~ rancher_version_regex)) ) {
                           string(credentialsId: 'AWS_SSH_PEM_KEY', variable: 'aws_ssh_pem_key'),
                           string(credentialsId: 'ADMIN_PASSWORD', variable: 'admin_password')
         ]) {
-          if (!env.AWS_SSH_PEM_KEY)
+          if (env.AWS_SSH_PEM_KEY == "")
             env.AWS_SSH_PEM_KEY = "$aws_ssh_pem_key"
-          if (!env.AWS_ACCESS_KEY_ID)
+          if (env.AWS_ACCESS_KEY_ID == "")
             env.AWS_ACCESS_KEY_ID = "$aws_access_key_id"
-          if (!env.AWS_SECRET_ACCESS_KEY)  
+          if (env.AWS_SECRET_ACCESS_KEY == "")  
             env.AWS_SECRET_ACCESS_KEY = "$aws_secret_access_key"
-          if (!env.ADMIN_PASSWORD)
+          if (env.ADMIN_PASSWORD == "")
             env.ADMIN_PASSWORD = "$admin_password"
         }
 
