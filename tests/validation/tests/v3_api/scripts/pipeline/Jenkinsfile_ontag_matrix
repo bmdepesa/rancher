@@ -39,8 +39,8 @@ if ( true == via_webhook() && (!(rancher_version ==~ rancher_version_regex)) ) {
   println("** This will **not** result in a pipeline run.")
   currentBuild.result = lastBuildResult()
 } else {
-  if (rancher_version.startsWith("v2.2") || rancher_version == "master") {
-    branch = "master"
+  if (rancher_version.startsWith("v2.2") || rancher_version == "master-head") {
+    branch = "master-head"
   }
   if (env.BRANCH) {
     branch = "${BRANCH}"
@@ -102,8 +102,8 @@ if ( true == via_webhook() && (!(rancher_version ==~ rancher_version_regex)) ) {
           stage('Configure and Build') {
             if (env.AWS_SSH_PEM_KEY && env.AWS_SSH_KEY_NAME) {
               dir(".ssh") {
-                def decoded = new String(AWS_SSH_PEM_KEY.decodeBase64())
-                writeFile file: AWS_SSH_KEY_NAME, text: decoded
+                def decoded = new String(env.AWS_SSH_PEM_KEY.decodeBase64())
+                writeFile file: env.AWS_SSH_KEY_NAME, text: decoded
               }
             }
             sh "./tests/v3_api/scripts/configure.sh"
