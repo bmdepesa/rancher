@@ -186,7 +186,7 @@ if ( true == via_webhook() && (!(rancher_version ==~ rancher_version_regex)) ) {
                 } catch(err) {
                   echo "Error: " + err
                 }
-            }
+            } }
 
             stage('Delete Rancher Server') {
               if (env.RANCHER_DELETE_SERVER.toLowerCase() == "true") {
@@ -209,7 +209,6 @@ if ( true == via_webhook() && (!(rancher_version ==~ rancher_version_regex)) ) {
                 }
               }
             }
-          }
 
             stage('Test Report') {
               // copy and archive test results
