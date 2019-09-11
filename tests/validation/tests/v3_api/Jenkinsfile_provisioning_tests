@@ -49,7 +49,7 @@ node {
               
               sh "docker cp ${JOB_NAME}${BUILD_NUMBER}:/src/rancher-validation/tests/v3_api/rancher_env.config ."
               load "rancher_env.config"
-              
+
               RANCHER_DEPLOYED = true
             }  
           }
@@ -63,10 +63,10 @@ node {
         stage('Run provisioning tests') {
           params = [ string(name: 'CATTLE_TEST_URL', value: "${CATTLE_TEST_URL}"), string(name: 'ADMIN_TOKEN', value: "${ADMIN_TOKEN}"), string(name: 'BRANCH', value: branch) ]
 
-          jobs["custom"] = { build job: 'rancher-v3_test_custom_cluster', parameters: params}
-          jobs["do"] = { build job: 'rancher-v3_test_do_cluster', parameters: params }
-          jobs["ec2"] = { build job: 'rancher-v3_test_ec2_cluster', parameters: params }
-          jobs["az"] = { build job: 'rancher-v3_test_az_cluster', parameters: params }
+          jobs["custom"] = { build job: 'rancher-v3_custom_provisioning', parameters: params}
+          jobs["do"] = { build job: 'rancher-v3_do_provisioning', parameters: params }
+          jobs["ec2"] = { build job: 'rancher-v3_ec2_provisioning', parameters: params }
+          jobs["az"] = { build job: 'rancher-v3_az_provisioning', parameters: params }
 
           parallel jobs
         }
