@@ -72,15 +72,15 @@ if ( true == via_webhook() && (!(rancher_version ==~ rancher_version_regex)) ) {
       def ADMIN_TOKEN_2 = ""
 
       wrap([$class: 'AnsiColorBuildWrapper', 'colorMapName': 'XTerm', 'defaultFg': 2, 'defaultBg':1]) {
-        withCredentials([ string(credentialsId: 'AWS_ACCESS_KEY_ID', variable: 'aws_access_key_id'),
-                          string(credentialsId: 'AWS_SECRET_ACCESS_KEY', variable: 'aws_secret_access_key'),
-                          string(credentialsId: 'AWS_SSH_PEM_KEY', variable: 'aws_ssh_pem_key'),
-                          string(credentialsId: 'ADMIN_PASSWORD', variable: 'admin_password')]) {
-          withEnv(["AWS_SSH_PEM_KEY=${aws_ssh_pem_key}",
+        withCredentials([ string(credentialsId: 'AWS_ACCESS_KEY_ID', variable: 'AWS_ACCESS_KEY_ID'),
+                          string(credentialsId: 'AWS_SECRET_ACCESS_KEY', variable: 'AWS_SECRET_ACCESS_KEY'),
+                          string(credentialsId: 'AWS_SSH_PEM_KEY', variable: 'AWS_SSH_PEM_KEY'),
+                          string(credentialsId: 'ADMIN_PASSWORD', variable: 'ADMIN_PASSWORD')]) {
+          /*withEnv(["AWS_SSH_PEM_KEY=${aws_ssh_pem_key}",
                   "AWS_ACCESS_KEY_ID=${aws_access_key_id}",
                   "AWS_SECRET_ACCESS_KEY=${aws_secret_access_key}",
                   "ADMIN_PASSWORD=${admin_password}"]) {
-
+*/
             println "Branch: ${branch}"
             stage('Checkout') {
                 deleteDir()
@@ -103,8 +103,7 @@ if ( true == via_webhook() && (!(rancher_version ==~ rancher_version_regex)) ) {
                 sh "./tests/v3_api/scripts/configure.sh"
                 sh "./tests/v3_api/scripts/build.sh"
               }
-            }
-            dir ("tests/validation/") {
+
               try {
                 stage('Deploy Rancher server 1') {
                   try {
@@ -233,7 +232,7 @@ if ( true == via_webhook() && (!(rancher_version ==~ rancher_version_regex)) ) {
             }
           }
         }
-      }
+      //}
     }
   } catch(err) {
     echo "Error: " + err
