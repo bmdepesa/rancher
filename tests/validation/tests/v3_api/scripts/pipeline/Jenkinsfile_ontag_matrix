@@ -92,10 +92,10 @@ if ( true == via_webhook() && (!(rancher_version ==~ rancher_version_regex)) ) {
                         ])
             }
 
-            dir ("tests/validation") {
+            //dir ("tests/validation") {
               stage('Configure and Build') {
                 if (env.AWS_SSH_PEM_KEY && env.AWS_SSH_KEY_NAME) {
-                  dir(".ssh") {
+                  dir("tests/validation/.ssh/") {
                     def decoded = new String(env.AWS_SSH_PEM_KEY.decodeBase64())
                     writeFile file: env.AWS_SSH_KEY_NAME, text: decoded
                   }
@@ -228,7 +228,6 @@ if ( true == via_webhook() && (!(rancher_version ==~ rancher_version_regex)) ) {
                 sh "docker rm -v ${deleteContainer2}"
                 sh "docker rmi ${imageName}"
               }
-            }
           }
         }
       }
