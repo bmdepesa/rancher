@@ -40,7 +40,7 @@ if ( true == via_webhook() && (!(rancher_version ==~ rancher_version_regex)) ) {
   currentBuild.result = lastBuildResult()
 } else {
   if (rancher_version.startsWith("v2.2") || rancher_version == "master-head") {
-    branch = "master-head"
+    branch = "master"
   }
   if (env.BRANCH) {
     branch = "${BRANCH}"
@@ -75,9 +75,7 @@ if ( true == via_webhook() && (!(rancher_version ==~ rancher_version_regex)) ) {
         withCredentials([ string(credentialsId: 'AWS_ACCESS_KEY_ID', variable: 'aws_access_key_id'),
                           string(credentialsId: 'AWS_SECRET_ACCESS_KEY', variable: 'aws_secret_access_key'),
                           string(credentialsId: 'AWS_SSH_PEM_KEY', variable: 'aws_ssh_pem_key'),
-                          string(credentialsId: 'ADMIN_PASSWORD', variable: 'admin_password')
-        ]) {
-  
+                          string(credentialsId: 'ADMIN_PASSWORD', variable: 'admin_password')]) {
           withEnv(["AWS_SSH_PEM_KEY=${aws_ssh_pem_key}",
                   "AWS_ACCESS_KEY_ID=${aws_access_key_id}",
                   "AWS_SECRET_ACCESS_KEY=${aws_secret_access_key}",

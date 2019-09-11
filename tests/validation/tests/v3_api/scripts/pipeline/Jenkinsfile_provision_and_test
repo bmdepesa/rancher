@@ -43,8 +43,7 @@ node {
                       string(credentialsId: 'RANCHER_REGISTRY_USER_NAME', variable: 'rancher_registry_username'),
                       string(credentialsId: 'RANCHER_REGISTRY_PASSWORD', variable: 'rancher_registry_password'),
                       string(credentialsId: 'ADMIN_PASSWORD', variable: 'admin_password'),
-                      string(credentialsId: 'RANCHER_GKE_CREDENTIAL', variable: 'rancher_gke_credential')
-        ]) {
+                      string(credentialsId: 'RANCHER_GKE_CREDENTIAL', variable: 'rancher_gke_credential')]) {
       withEnv([ "AWS_ACCESS_KEY_ID=${aws_access_key_id}",
                 "AWS_SECRET_ACCESS_KEY=${aws_secret_access_key}",
                 "DO_ACCESSKEY=${do_accesskey}",
@@ -57,8 +56,7 @@ node {
                 "RANCHER_REGISTRY_USER_NAME=${rancher_registry_username}",
                 "RANCHER_REGISTRY_PASSWORD=${rancher_registry_password}",
                 "ADMIN_PASSWORD=${admin_password}",
-                "RANCHER_GKE_CREDENTIAL=${rancher_gke_credential}"
-      ]) {
+                "RANCHER_GKE_CREDENTIAL=${rancher_gke_credential}"]) {
         stage('Checkout') {
           deleteDir()
           checkout([
