@@ -92,10 +92,10 @@ if ( true == via_webhook() && (!(rancher_version ==~ rancher_version_regex)) ) {
                         ])
             }
 
-            //dir ("tests/validation") {
+            dir ("tests/validation") {
               stage('Configure and Build') {
                 if (env.AWS_SSH_PEM_KEY && env.AWS_SSH_KEY_NAME) {
-                  dir("tests/validation/.ssh/") {
+                  dir(".ssh/") {
                     def decoded = new String(env.AWS_SSH_PEM_KEY.decodeBase64())
                     writeFile file: env.AWS_SSH_KEY_NAME, text: decoded
                   }
@@ -103,6 +103,7 @@ if ( true == via_webhook() && (!(rancher_version ==~ rancher_version_regex)) ) {
                 sh "./tests/v3_api/scripts/configure.sh"
                 sh "./tests/v3_api/scripts/build.sh"
               }
+            }
               try {
                 stage('Deploy Rancher server 1') {
                   try {
