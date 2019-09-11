@@ -89,16 +89,15 @@ node {
           }
         }
 
-          stage('Test Report') {
-            sh "docker cp ${JOB_NAME}${BUILD_NUMBER}:/src/rancher-validation/setup.xml ."
-            step([$class: 'JUnitResultArchiver', testResults: '**/setup.xml'])
-          }
+        stage('Test Report') {
+          sh "docker cp ${JOB_NAME}${BUILD_NUMBER}:/src/rancher-validation/setup.xml ."
+          step([$class: 'JUnitResultArchiver', testResults: '**/setup.xml'])
+        }
 
-          stage('Cleanup') {
-            sh "docker stop ${JOB_NAME}${BUILD_NUMBER}"
-            sh "docker rm -v ${JOB_NAME}${BUILD_NUMBER}"
-            sh "docker rmi ${imageName}"
-          }
+        stage('Cleanup') {
+          sh "docker stop ${JOB_NAME}${BUILD_NUMBER}"
+          sh "docker rm -v ${JOB_NAME}${BUILD_NUMBER}"
+          sh "docker rmi ${imageName}"
         }
       }
     }
