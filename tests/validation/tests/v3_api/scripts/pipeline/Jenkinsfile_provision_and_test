@@ -40,7 +40,7 @@ node {
                       string(credentialsId: 'AZURE_TENANT_ID', variable: 'azure_tenant_id'), 
                       string(credentialsId: 'AZURE_CLIENT_ID', variable: 'azure_client_id'),
                       string(credentialsId: 'AZURE_SECRET_KEY', variable: 'azure_secret_key'),
-                      string(credentialsId: 'RANCHER_REGISTRY_USERNAME', variable: 'rancher_registry_username'),
+                      string(credentialsId: 'RANCHER_REGISTRY_USER_NAME', variable: 'rancher_registry_username'),
                       string(credentialsId: 'RANCHER_REGISTRY_PASSWORD', variable: 'rancher_registry_password'),
                       string(credentialsId: 'ADMIN_PASSWORD', variable: 'admin_password'),
                       string(credentialsId: 'RANCHER_GKE_CREDENTIAL', variable: 'rancher_gke_credential')
@@ -54,7 +54,7 @@ node {
                 "AZURE_TENANT_ID=${azure_tenant_id}", 
                 "AZURE_CLIENT_ID=${azure_client_id}",
                 "AZURE_SECRET_KEY=${azure_secret_key}",
-                "RANCHER_REGISTRY_USERNAME=${rancher_registry_username}",
+                "RANCHER_REGISTRY_USER_NAME=${rancher_registry_username}",
                 "RANCHER_REGISTRY_PASSWORD=${rancher_registry_password}",
                 "ADMIN_PASSWORD=${admin_password}",
                 "RANCHER_GKE_CREDENTIAL=${rancher_gke_credential}"
