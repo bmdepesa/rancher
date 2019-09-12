@@ -1,0 +1,22 @@
+// Job Params
+// Requires: PYTEST_OPTIONS, CATTLE_TEST_URL, ADMIN_TOKEN
+// Optional: AWS_SSH_PEM_KEY, AWS_SSH_KEY_NAME, DEBUG
+
+node {
+  def rootPath = "/src/rancher-validation/"
+  def testContainer = "${JOB_NAME}${env.BUILD_NUMBER}_test"
+
+  def setupResultsOut = "setup-results.xml"
+  def testResultsOut = "results.xml"
+  def imageName = "rancher-validation-${JOB_NAME}${env.BUILD_NUMBER}"
+  def testsDir = "tests/v3_api/"
+
+  def branch = "master"
+  if ("${env.branch}" != "null" && "${env.branch}" != "") {
+    branch = "${env.branch}"
+  }
+
+  wrap([$class: 'AnsiColorBuildWrapper', 'colorMapName': 'XTerm', 'defaultFg': 2, 'defaultBg':1]) {
+    println("$OS_CREDENTIALS")
+  }
+}
