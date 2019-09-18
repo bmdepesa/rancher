@@ -134,17 +134,19 @@ node {
             currentBuild.result = 'UNSTABLE'
           }
         }
+        
+        dir('tests/validation') {
+          stage('Checkout postupgrade branch & rebuild') {
+            checkout([
+                      $class: 'GitSCM',
+                      branches: [[name: "*/${post_branch}"]],
+                      extensions: scm.extensions,
+                      userRemoteConfigs: scm.userRemoteConfigs
+                    ])
 
-        stage('Checkout postupgrade branch & rebuild') {
-          checkout([
-                    $class: 'GitSCM',
-                    branches: [[name: "*/${post_branch}"]],
-                    extensions: scm.extensions,
-                    userRemoteConfigs: scm.userRemoteConfigs
-                  ])
-
-            sh "./tests/v3_api/scripts/configure.sh"
-            sh "./tests/v3_api/scripts/build.sh"
+              sh "./tests/v3_api/scripts/configure.sh"
+              sh "./tests/v3_api/scripts/build.sh"
+          }
         }
 
         stage('Run upgrade') {
