@@ -142,6 +142,13 @@ node {
                   userRemoteConfigs: scm.userRemoteConfigs
                 ])
 
+          if (env.AWS_SSH_PEM_KEY && env.AWS_SSH_KEY_NAME) {
+            dir("./tests/validation/.ssh") {
+              def decoded = new String(AWS_SSH_PEM_KEY.decodeBase64())
+              writeFile file: AWS_SSH_KEY_NAME, text: decoded
+            }
+          }
+
           sh "./tests/validation/tests/v3_api/scripts/configure.sh"
           sh "./tests/validation/tests/v3_api/scripts/build.sh"
       }
