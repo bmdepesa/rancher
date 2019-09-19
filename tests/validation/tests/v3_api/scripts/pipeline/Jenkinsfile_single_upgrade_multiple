@@ -87,7 +87,7 @@ node {
         }
 
         stage('Stash reports') {
-          stash name: "reports-stash", includes: "./tests/validation/reports/*"
+          stash name: "reportsstash", includes: "**/reports/*"
         }
 
         stage('Checkout Post Branch') {
@@ -95,7 +95,7 @@ node {
         }
 
         stage('Unstash reports') {
-          unstash name: "reports-stash"
+          unstash name: "reportsstash"
         }
 
         dir ("tests/validation") {
