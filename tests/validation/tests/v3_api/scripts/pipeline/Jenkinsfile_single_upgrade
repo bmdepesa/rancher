@@ -76,8 +76,8 @@ node {
             writeFile file: AWS_SSH_KEY_NAME, text: decoded
           }
         }
-        sh "./tests/v3_api/scripts/configure.sh"
-        sh "./tests/v3_api/scripts/build.sh"
+        sh "./tests/validation/tests/v3_api/scripts/configure.sh"
+        sh "./tests/validation/tests/v3_api/scripts/build.sh"
       }
 
       stage('Deploy Rancher server') {
