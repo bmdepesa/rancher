@@ -263,9 +263,7 @@ def buildContainer() {
 def checkoutBranch(def branch) {
   checkout([
             $class: 'GitSCM',
-            branches: [[name: "*/${branch}"]],
-            extensions: scm.extensions,
-            userRemoteConfigs: scm.userRemoteConfigs
+            branches: [[name: "*/${branch}"]]
           ])
 }
 
@@ -525,7 +523,7 @@ def collectReports() {
 
 def publishReports() {
   dir('.') {
-    def reportFilesString = sh(script: 'find reports -name "*.html"', returnStdout: true).split().join(',')
+    def reportFilesString = sh(script: 'find ./tests/validation/reports -name "*.html"', returnStdout: true).split().join(',')
     echo "reportFiles: " + reportFilesString
 
     publishHTML (target: [
