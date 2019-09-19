@@ -86,8 +86,16 @@ node {
           }
         }
 
+        stage('Stash reports') {
+          stash name: "reports-stash", includes: "./tests/validation/reports/*"
+        }
+
         stage('Checkout Post Branch') {
           checkoutBranch(POSTUPGRADE_BRANCH)
+        }
+
+        stage('Unstash reports') {
+          unstash name: "reports-stash"
         }
 
         dir ("tests/validation") {
@@ -263,7 +271,9 @@ def buildContainer() {
 def checkoutBranch(def branch) {
   checkout([
             $class: 'GitSCM',
-            branches: [[name: "*/${branch}"]]
+            branches: [[name: "*/${branch}"]],
+            extensions: scm.extensions,
+            userRemoteConfigs: scm.userRemoteConfigs
           ])
 }
 
