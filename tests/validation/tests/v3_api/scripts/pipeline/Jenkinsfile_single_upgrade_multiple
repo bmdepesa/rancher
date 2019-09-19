@@ -43,15 +43,15 @@ node {
                       string(credentialsId: 'RANCHER_GKE_CREDENTIAL', variable: 'RANCHER_GKE_CREDENTIAL')]) {
         deleteDir()
 
-        stage('Prechecks / Checkout / Build') {  
+        stage('Prechecks / Checkout') {  
           setEnvFromParams()
           checkParams()
           checkoutBranch(PREUPGRADE_BRANCH)
-          buildContainer()
         }
-
+        
         dir ("tests/validation") {
-          stage('Deploy Rancher Server') {
+          stage('Build container / Deploy Rancher Server') {
+              buildContainer()
               deployRancherServer()
           }
 
@@ -84,13 +84,15 @@ node {
               currentBuild.result = 'UNSTABLE'
             }
           }
+        }
 
-          stage('Checkout Post Branch & Rebuild') {
-            checkoutBranch(POSTUPGRADE_BRANCH)
+        stage('Checkout Post Branch') {
+          checkoutBranch(POSTUPGRADE_BRANCH)
+        }
+
+        dir ("tests/validation") {
+          stage('Rebuild / Run Upgrade') {
             buildContainer()
-          }
-
-          stage('Run Upgrade') {
             upgradeRancher()
           }
 
@@ -246,12 +248,10 @@ def checkParams() {
 
 def buildContainer() {
   try {
-    if (env.AWS_SSH_PEM_KEY && env.AWS_SSH_KEY_NAME) {
       dir("./tests/validation/.ssh") {
         def decoded = new String(AWS_SSH_PEM_KEY.decodeBase64())
         writeFile file: AWS_SSH_KEY_NAME, text: decoded
       }
-    }
     
     sh "./tests/validation/tests/v3_api/scripts/configure.sh"
     sh "./tests/validation/tests/v3_api/scripts/build.sh"
