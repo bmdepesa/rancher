@@ -248,13 +248,13 @@ def checkParams() {
 
 def buildContainer() {
   try {
-      dir("./tests/validation/.ssh") {
+      dir(".ssh") {
         def decoded = new String(AWS_SSH_PEM_KEY.decodeBase64())
         writeFile file: AWS_SSH_KEY_NAME, text: decoded
       }
     
-    sh "./tests/validation/tests/v3_api/scripts/configure.sh"
-    sh "./tests/validation/tests/v3_api/scripts/build.sh"
+    sh "./tests/v3_api/scripts/configure.sh"
+    sh "./tests/v3_api/scripts/build.sh"
   } catch(error) {
     echo "Error: " + err
   }
