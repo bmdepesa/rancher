@@ -8,6 +8,7 @@ from .common import random_test_name
 from .common import readDataFile
 from .common import run_command_with_stderr
 from .common import set_url_password_token
+from .common import write_file
 
 from lib.aws import AmazonWebServices
 
@@ -15,20 +16,23 @@ DATA_SUBDIR = os.path.join(os.path.dirname(os.path.realpath(__file__)),
                            'resource')
 
 RANCHER_CHART_VERSION = os.environ.get("RANCHER_CHART_VERSION")
-test_run_id = random_test_name("auto")
+test_run_id = random_test_name("a")
 # if hostname is not provided, generate one ( to support onTag )
-RANCHER_HOSTNAME_PREFIX = os.environ.get("RANCHER_HOSTNAME_PREFIX", test_run_id)
+RANCHER_HOSTNAME_PREFIX = os.environ.get("RANCHER_HOSTNAME_PREFIX",
+                                         test_run_id)
 resource_suffix = test_run_id + "-" + RANCHER_HOSTNAME_PREFIX
 RANCHER_HA_HOSTNAME = RANCHER_HOSTNAME_PREFIX + ".qa.rancher.space"
 RANCHER_IMAGE_TAG = os.environ.get("RANCHER_IMAGE_TAG")
 RANCHER_SERVER_URL = "https://" + RANCHER_HA_HOSTNAME
 RANCHER_HELM_REPO = os.environ.get("RANCHER_HELM_REPO", "latest")
 AWS_SSH_KEY_NAME = os.environ.get("AWS_SSH_KEY_NAME")
-kubeconfig_path = DATA_SUBDIR + "/kube_config_cluster-ha-filled.yml"
+kubeconfig_path = DATA_SUBDIR + "/out/kube_config_" + \
+                  RANCHER_HA_HOSTNAME + ".yml"
+output_path = DATA_SUBDIR + "/out/"
 export_cmd = "export KUBECONFIG=" + kubeconfig_path
 
 
-def test_create_ha():
+def test_create_selfsigned_ha():
     print(RANCHER_HA_HOSTNAME)
     nodes = create_resources()
     rke_config = create_rke_cluster_config(nodes)
@@ -40,8 +44,9 @@ def test_create_ha():
 
 
 def create_resources():
+    contents = ""
     # Create nlb and grab ARN & dns name
-    lb = AmazonWebServices().create_network_lb(name="nlb-" + resource_suffix)
+    lb = AmazonWebServices().create_network_lb(name="nlb" + resource_suffix)
     lbArn = lb["LoadBalancers"][0]["LoadBalancerArn"]
     lbDns = lb["LoadBalancers"][0]["DNSName"]
 
@@ -51,9 +56,9 @@ def create_resources():
 
     # Create the target groups
     targetGroup80 = AmazonWebServices(). \
-        create_ha_target_group(80, "tg-80-" + resource_suffix)
+        create_ha_target_group(80, "tg80" + resource_suffix)
     targetGroup443 = AmazonWebServices(). \
-        create_ha_target_group(443, "tg-443-" + resource_suffix)
+        create_ha_target_group(443, "tg443" + resource_suffix)
     targetGroup80Arn = targetGroup80["TargetGroups"][0]["TargetGroupArn"]
     targetGroup443Arn = targetGroup443["TargetGroups"][0]["TargetGroupArn"]
 
@@ -63,17 +68,19 @@ def create_resources():
                                                targetGroupARN=targetGroup80Arn)
     AmazonWebServices().create_ha_nlb_listener(loadBalancerARN=lbArn,
                                                port=443,
-                                               targetGroupARN=targetGroup443Arn)
+                                               targetGroupARN=targetGroup443Arn
+                                               )
 
     targets = []
     aws_nodes = \
         AmazonWebServices().create_multiple_nodes(
-            3, resource_suffix, wait_for_ready=True)
+            3, RANCHER_HA_HOSTNAME, wait_for_ready=True)
     assert len(aws_nodes) == 3
 
     for aws_node in aws_nodes:
         print(aws_node.public_ip_address)
         targets.append(aws_node.provider_node_id)
+        contents += "ip=" + aws_node.public_ip_address + "\n"
 
     # Register the nodes to the target groups
     targets_list = [dict(Id=target_id, Port=80) for target_id in targets]
@@ -82,6 +89,13 @@ def create_resources():
     targets_list = [dict(Id=target_id, Port=443) for target_id in targets]
     AmazonWebServices().register_targets(targets_list,
                                          targetGroup443Arn)
+
+    contents += "lb=" + lbArn + "\n"
+    contents += "tg=" + targetGroup443Arn + "\n"
+    contents += "tg=" + targetGroup80Arn + "\n"
+
+    write_file(output_path + "ha_delete.config", contents)
+
     return aws_nodes
 
 
@@ -129,9 +143,9 @@ def install_rancher_self_signed(repo=RANCHER_HELM_REPO):
         "--namespace cattle-system " + \
         "--set hostname=" + RANCHER_HA_HOSTNAME
 
-    if RANCHER_IMAGE_TAG != "":
+    if RANCHER_IMAGE_TAG != "" and RANCHER_IMAGE_TAG is not None:
         helm_rancher_cmd = helm_rancher_cmd + \
-            " --set rancherImageTag=${RANCHER_IMAGE_TAG}"
+            " --set rancherImageTag=" + RANCHER_IMAGE_TAG
 
     print(helm_rancher_cmd)
     out = run_command_with_stderr(helm_rancher_cmd)
@@ -157,6 +171,8 @@ def create_rke_cluster(config_path):
     rke_cmd = "rke --version && rke up --config " + config_path
     result = run_command_with_stderr(rke_cmd)
     print(result)
+    mv_kc_cmd = "mv " + DATA_SUBDIR + "/kube_config_* " + output_path
+    run_command_with_stderr(mv_kc_cmd)
 
 
 def create_rke_cluster_config(aws_nodes):
@@ -176,9 +192,40 @@ def create_rke_cluster_config(aws_nodes):
 
     rkeconfig = rkeconfig.replace("$AWS_SSH_KEY_NAME", AWS_SSH_KEY_NAME)
 
-    clusterfilepath = DATA_SUBDIR + "/" + "cluster-ha-filled.yml"
+    clusterfilepath = DATA_SUBDIR + "/" + RANCHER_HA_HOSTNAME + ".yml"
 
-    f = open(clusterfilepath, "w")
-    f.write(rkeconfig)
-    f.close()
+    write_file(clusterfilepath, rkeconfig)
+
     return clusterfilepath
+
+
+def test_delete_ha_from_config():
+    ip = []
+    lb = []
+    tg = []
+
+    with open(output_path + "ha_delete.config") as f:
+        for line in f:
+            values = line.split('=')
+            if values[0] == "ip":
+                ip.append(values[1])
+            elif values[0] == "lb":
+                lb.append(values[1])
+            elif values[1] == "tg":
+                tg.append(values[1])
+
+    # client and token to delete clusters
+    for arn in lb:
+        print("Deleting " + arn)
+        AmazonWebServices().delete_lb(arn)
+
+    for arn in tg:
+        print("Deleting " + arn)
+        AmazonWebServices().delete_target_group(arn)
+
+    nodes = AmazonWebServices().\
+        get_nodes([{'Name':
+                    'network-interface.addresses.association.public-ip',
+                    'Values': ip}])
+    print(nodes)
+    AmazonWebServices().delete_nodes(nodes)

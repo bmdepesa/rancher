@@ -1177,6 +1177,12 @@ def create_config_file(env_details):
     file.close()
 
 
+def write_file(file, contents):
+    file = open(file, "w")
+    file.write(contents)
+    file.close()
+
+
 def validate_hostPort(p_client, workload, source_port, cluster):
     url = get_endpoint_url_for_workload(p_client, workload)
     wl = p_client.list_workload(uuid=workload.uuid).data[0]

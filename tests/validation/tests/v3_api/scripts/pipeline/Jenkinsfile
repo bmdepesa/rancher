@@ -69,6 +69,17 @@ node {
             }
           }
 
+          stage('Copy Artifact') {
+            try {
+              if (ARTIFACT_TO_ARCHIVE != "" && ARTIFACT_TO_COPY != "") {
+                sh "docker cp ${testContainer}:${ARTIFACT_TO_COPY} . "
+                archiveArtifacts ARTIFACT_TO_ARCHIVE
+              }
+            } catch(err) {
+              echo 'Test run had failures. Collecting results...'
+            }
+          }
+
           stage('Test Report') {
             sh "docker cp ${testContainer}:${rootPath}${testResultsOut} ."
             step([$class: 'JUnitResultArchiver', testResults: "**/${testResultsOut}"])

@@ -1,0 +1,73 @@
+#!groovy
+@Library('coupler@master') _
+
+checkDockerWebhook()
+def version = resolveRancherVersion(params)
+println("Version: " + version)
+def branch = getBranchByVersion(version, params)
+def containers = []
+
+node {
+  wrapWithColor {
+    withJenkinsCredentials {
+      stage('Checkout') {
+        deleteDir()
+        checkoutProject(branch)
+      }
+
+      dir ("tests/validation/") {
+        stage('Build') {
+          buildTestContainer()
+        }
+
+        try {
+          stage('Deploy HA Rancher server') {
+            containers << deployRancher([ installType : 'HA', 
+                                          reportName : 'ha-deploy', 
+                                          certs : 'selfsigned',
+                                          version : version ])
+          }
+
+          stage('Execute subjobs') {
+            try {
+                jobs = [:]
+        
+                params = [ string(name: 'CATTLE_TEST_URL', value: "${CATTLE_TEST_URL}"),
+                           string(name: 'ADMIN_TOKEN', value: "${ADMIN_TOKEN}"),
+                           string(name: 'USER_TOKEN', value: "${USER_TOKEN}"),
+                           string(name: 'BRANCH', value: "${branch}") ]
+
+                // jobs = [ "do"  : { build job: 'rancher-v3_ontag_do_certification', parameters: params },
+                //          "ec2" : { build job: 'rancher-v3_ontag_ec2_certification', parameters: params },
+                //          "az"  : { build job: 'rancher-v3_ontag_az_certification', parameters: params },
+                //          "cus" : { build job: 'rancher-v3_ontag_custom_certification', parameters: params},
+                //          "gke" : { build job: 'rancher-v3_ontag_gke_certification', parameters: params },
+                //          "eks" : { build job: 'rancher-v3_ontag_eks_certification', parameters: params },
+                //          "aks" : { build job: 'rancher-v3_ontag_aks_certification', parameters: params },
+                //          "imp" : { build job: 'rancher-v3_ontag_import_certification', parameters: params }]
+                jobs = [ "cust"  : { build job: 'rancher-v3_ontag_custom_certification', parameters: params }]
+                parallel jobs
+              } catch(err) {
+                echo "Error: " + err.message
+              }
+          }
+          
+          stage('Delete Rancher HA Server') {
+            if ("true" == RANCHER_DELETE_SERVER.toLowerCase()) {
+              containers << deleteHAFromConfig()
+            }
+          }
+
+          stage('Publish Reports') {
+            publishReports("HA Cluster Matrix Certification")
+          }
+        } catch(err){
+          echo "Error: " + err.message
+        } finally {
+          removeDockerContainers(containers)
+          removeDockerImages()
+        }
+      } // dir(tests/validation)
+    } // creds
+  } // wrap
+} // node
