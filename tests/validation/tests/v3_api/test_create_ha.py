@@ -21,7 +21,7 @@ test_run_id = random_test_name("auto")
 # if hostname is not provided, generate one ( to support onTag )
 RANCHER_HOSTNAME_PREFIX = os.environ.get("RANCHER_HOSTNAME_PREFIX", test_run_id)
 resource_suffix = test_run_id + "-" + RANCHER_HOSTNAME_PREFIX
-RANCHER_HA_HOSTNAME = RANCHER_HOSTNAME_PREFIX + ".qa.rancher.space"
+RANCHER_HA_HOSTNAME = os.environ.get("RANCHER_HA_HOSTNAME", RANCHER_HOSTNAME_PREFIX + ".qa.rancher.space")
 RANCHER_IMAGE_TAG = os.environ.get("RANCHER_IMAGE_TAG")
 RANCHER_SERVER_URL = "https://" + RANCHER_HA_HOSTNAME
 RANCHER_HELM_REPO = os.environ.get("RANCHER_HELM_REPO", "latest")
@@ -33,12 +33,13 @@ RANCHER_VALID_TLS_KEY = os.environ.get("RANCHER_VALID_TLS_KEY")
 RANCHER_BYO_TLS_CERT = os.environ.get("RANCHER_BYO_TLS_CERT")
 RANCHER_BYO_TLS_KEY = os.environ.get("RANCHER_BYO_TLS_KEY")
 RANCHER_PRIVATE_CA_CERT = os.environ.get("RANCHER_PRIVATE_CA_CERT")
+RANCHER_HA_KUBECONFIG = os.environ.get("RANCHER_HA_KUBECONFIG")
 AWS_SSH_KEY_NAME = os.environ.get("AWS_SSH_KEY_NAME")
 kubeconfig_path = DATA_SUBDIR + "/kube_config_cluster-ha-filled.yml"
 export_cmd = "export KUBECONFIG=" + kubeconfig_path
 
 
-def test_create_ha():
+def test_create_ha(precheck_certificate_options):
     cm_install = True
     
     if "byo-" in RANCHER_HA_CERT_OPTION:
@@ -47,6 +48,11 @@ def test_create_ha():
     ha_setup(install_cm=cm_install)
     install_rancher()
     ha_finalize()
+
+def test_upgrade_ha(precheck_upgrade_options):
+    write_kubeconfig()
+    add_repo_create_namespace()
+    install_rancher(upgrade=True)
 
 def ha_setup(install_cm=True):
     print(RANCHER_HA_HOSTNAME)
@@ -138,9 +144,14 @@ def add_repo_create_namespace(repo=RANCHER_HELM_REPO):
     run_command_with_stderr(helm_init_cmd)
 
 
-def install_rancher(type=RANCHER_HA_CERT_OPTION, repo=RANCHER_HELM_REPO):
+def install_rancher(type=RANCHER_HA_CERT_OPTION, repo=RANCHER_HELM_REPO, upgrade=False):
+    operation = "install"
+
+    if upgrade == True:
+        operation = "upgrade"
+
     helm_rancher_cmd = \
-        export_cmd + " && helm_v3 install rancher " + \
+        export_cmd + " && helm_v3 " + operation + " rancher " + \
         "rancher-" + repo + "/rancher " + \
         "--version " + RANCHER_CHART_VERSION + " " \
         "--namespace cattle-system " + \
@@ -162,13 +173,38 @@ def install_rancher(type=RANCHER_HA_CERT_OPTION, repo=RANCHER_HELM_REPO):
         helm_rancher_cmd = helm_rancher_cmd + \
             " --set rancherImageTag=" + RANCHER_IMAGE_TAG
 
-    if type == "byo-self-signed":
-        create_tls_secrets(valid_cert=False)
-    elif type == "byo-valid":
-        create_tls_secrets(valid_cert=True)
+    if operation == "install":
+        if type == "byo-self-signed":
+            create_tls_secrets(valid_cert=False)
+        elif type == "byo-valid":
+            create_tls_secrets(valid_cert=True)
 
     run_command_with_stderr(helm_rancher_cmd)
     time.sleep(120)
+
+def upgrade_rancher():
+    helm_upgrade rancher_cmd = \
+        export_cmd + " && helm_v3 repo update && helm_v3 upgrade rancher " + \
+        "rancher-" + repo + "/rancher " + \
+        "--version " + RANCHER_CHART_VERSION + " " \
+        "--namespace cattle-system " + \
+        "--set hostname=" + RANCHER_HA_HOSTNAME
+        
+    if type == 'letsencrypt':
+        helm_rancher_cmd = helm_rancher_cmd + \
+            " --set ingress.tls.source=letsEncrypt " + \
+            "--set letsEncrypt.email=" + RANCHER_LETSENCRYPT_EMAIL
+    elif type == 'byo-self-signed':
+        helm_rancher_cmd = helm_rancher_cmd + \
+            " --set ingress.tls.source=secret " + \
+            "--set privateCA=true"
+    elif type == 'byo-valid':
+        helm_rancher_cmd = helm_rancher_cmd + \
+            " --set ingress.tls.source=secret"
+    
+    if RANCHER_IMAGE_TAG != "" and RANCHER_IMAGE_TAG is not None:
+        helm_rancher_cmd = helm_rancher_cmd + \
+            " --set rancherImageTag=" + RANCHER_IMAGE_TAG
 
 
 def create_tls_secrets(valid_cert):
@@ -197,6 +233,11 @@ def create_tls_secrets(valid_cert):
 def write_encoded_certs(path, contents):
     file = open(path, "w")
     file.write(base64.b64decode(contents).decode("utf-8"))
+    file.close()
+
+def write_kubeconfig():
+    file = open(kubeconfig_path, "w")
+    file.write(base64.b64decode(RANCHER_HA_KUBECONFIG).decode("utf-8"))
     file.close()
 
 def set_url_and_password():
@@ -248,7 +289,7 @@ def create_rke_cluster_config(aws_nodes):
     f.close()
     return clusterfilepath
 
-@pytest.fixture(scope='module', autouse=True)
+@pytest.fixture(scope='module')
 def precheck_certificate_options():
     if RANCHER_HA_CERT_OPTION == 'byo-valid':
         if RANCHER_VALID_TLS_CERT == '' or RANCHER_VALID_TLS_KEY == '' or \
@@ -261,3 +302,10 @@ def precheck_certificate_options():
     elif RANCHER_HA_CERT_OPTION == 'letsencrypt':
         if RANCHER_LETSENCRYPT_EMAIL == '' or RANCHER_LETSENCRYPT_EMAIL is None:
             raise pytest.skip('LetsEncrypt email is not found in environment variables')
+
+@pytest.fixture(scope='module')
+def precheck_upgrade_options():
+    if RANCHER_HA_KUBECONFIG == '' or RANCHER_HA_KUBECONFIG is None:
+        raise pytest.skip('Kubeconfig is not found for upgrade!')
+    if RANCHER_HA_HOSTNAME == '' or RANCHER_HA_HOSTNAME is None:
+        raise pytest.skip('Hostname is not found for upgrade!')
