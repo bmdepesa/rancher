@@ -12,18 +12,16 @@ from .node import Node
 logging.getLogger('boto3').setLevel(logging.CRITICAL)
 logging.getLogger('botocore').setLevel(logging.CRITICAL)
 
-AWS_REGION = os.environ.get("AWS_REGION", "us-east-2")
-AWS_REGION_AZ = os.environ.get("AWS_REGION_AZ", "us-east-2a")
-AWS_SECURITY_GROUP = os.environ.get("AWS_SECURITY_GROUPS",
-                                    'sg-0e753fd5550206e55')
-AWS_SUBNET = os.environ.get("AWS_SUBNET", "subnet-ee8cac86")
+AWS_REGION = os.environ.get("AWS_REGION")
+AWS_REGION_AZ = os.environ.get("AWS_REGION_AZ")
+AWS_SECURITY_GROUP = os.environ.get("AWS_SECURITY_GROUPS")
+AWS_SUBNET = os.environ.get("AWS_SUBNET")
 AWS_HOSTED_ZONE_ID = os.environ.get("AWS_HOSTED_ZONE_ID", "")
-AWS_VPC_ID = os.environ.get("AWS_VPC_ID", "vpc-bfccf4d7")
+AWS_VPC_ID = os.environ.get("AWS_VPC_ID")
 AWS_ACCESS_KEY_ID = os.environ.get("AWS_ACCESS_KEY_ID")
 AWS_SECRET_ACCESS_KEY = os.environ.get("AWS_SECRET_ACCESS_KEY")
 AWS_SSH_KEY_NAME = os.environ.get("AWS_SSH_KEY_NAME")
-AWS_CICD_INSTANCE_TAG = os.environ.get("AWS_CICD_INSTANCE_TAG",
-                                       'rancher-validation')
+AWS_CICD_INSTANCE_TAG = os.environ.get("AWS_CICD_INSTANCE_TAG")
 AWS_IAM_PROFILE = os.environ.get("AWS_IAM_PROFILE", "")
 # by default the public Ubuntu 18.04 AMI is used
 AWS_DEFAULT_AMI = "ami-0d5d9d301c853a04a"
@@ -39,16 +37,17 @@ AWS_WINDOWS_INSTANCE_TYPE = 't3.xlarge'
 EKS_VERSION = os.environ.get("RANCHER_EKS_K8S_VERSION")
 EKS_ROLE_ARN = os.environ.get("RANCHER_EKS_ROLE_ARN")
 EKS_WORKER_ROLE_ARN = os.environ.get("RANCHER_EKS_WORKER_ROLE_ARN")
+AWS_EKS_SUBNETS = os.environ.get("AWS_EKS_SUBNETS")
 
-AWS_SUBNETS = []
-if ',' in AWS_SUBNET:
-    AWS_SUBNETS = AWS_SUBNET.split(',')
+EKS_SUBNETS = []
+if ',' in AWS_EKS_SUBNETS:
+    EKS_SUBNETS = AWS_EKS_SUBNETS.split(',')
 else:
-    AWS_SUBNETS = [AWS_SUBNET]
+    EKS_SUBNETS = [AWS_EKS_SUBNETS]
 
 
 class AmazonWebServices(CloudProviderBase):
-    
+
     def __init__(self):
         self._client = boto3.client(
             'ec2',
@@ -588,7 +587,7 @@ class AmazonWebServices(CloudProviderBase):
 
     def create_eks_controlplane(self, name):
         vpcConfiguration = {
-            "subnetIds": AWS_SUBNETS,
+            "subnetIds": EKS_SUBNETS,
             "securityGroupIds": [AWS_SECURITY_GROUP],
             "endpointPublicAccess": True,
             "endpointPrivateAccess": False
@@ -618,7 +617,7 @@ class AmazonWebServices(CloudProviderBase):
                              nodegroupName=name,
                              scalingConfig=scaling_config,
                              diskSize=20,
-                             subnets=AWS_SUBNETS,
+                             subnets=EKS_SUBNETS,
                              instanceTypes=[AWS_INSTANCE_TYPE],
                              nodeRole=EKS_WORKER_ROLE_ARN,
                              remoteAccess=remote_access)
