@@ -276,7 +276,7 @@ def buildContainer() {
     sh "./tests/v3_api/scripts/configure.sh"
     sh "./tests/v3_api/scripts/build.sh"
   } catch(error) {
-    echo "Error: " + err
+    echo "Error: " + error
   }
 }
 
