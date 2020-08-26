@@ -213,6 +213,7 @@ node {
     }
   } catch (e) {
     // do nothing
+    echo "Error: " + e
   } finally {
     stage('Publish reports') {
       try {
