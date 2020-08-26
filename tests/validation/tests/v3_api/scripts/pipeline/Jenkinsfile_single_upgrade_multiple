@@ -238,7 +238,8 @@ def setEnvFromParams() {
   // to expose the environment variables
   dir('.') {
     def vars = "${CLUSTER_TYPES}\n${EXTRA_VARS}\n${K8S_UPGRADE_VERSIONS}"
-    def paramsList = vars.split('\n')
+    def paramsList = vars.tokenize('\n')
+    println(paramsList)
     all_params = paramsList
   }
 }
