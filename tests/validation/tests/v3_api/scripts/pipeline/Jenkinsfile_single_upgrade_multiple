@@ -55,7 +55,7 @@ node {
 
           stage('Prechecks / Checkout') {  
             setEnvFromParams()
-            checkParams()
+            //checkParams()
             checkoutBranch(PREUPGRADE_BRANCH)
           }
           
@@ -236,18 +236,10 @@ def setEnvFromParams() {
   // from the Jenkins job -- these are written to a file and loaded
   // to expose the environment variables
   dir('.') {
-    def vars = "${CLUSTER_TYPES}\n\n${EXTRA_VARS}\n\n${K8S_UPGRADE_VERSIONS}"
-    writeFile(file: "pre_${paramsConfigFile}", text: vars)
-
-    def paramsConfigFileContents = readFile("pre_${paramsConfigFile}")
-    def paramsList = paramsConfigFileContents.split('\n')
-
+    def vars = "${CLUSTER_TYPES}\n${EXTRA_VARS}\n${K8S_UPGRADE_VERSIONS}"
+    def paramsList = vars.split('\n')
     all_params = paramsList
-
-    writeFile(file: paramsConfigFile, text: paramsList)
   }
-
-  // load paramsConfigFile
 }
 
 // Enforce that the params in `requiredParams` are present
