@@ -18,7 +18,7 @@ from .common import WebsocketLogParse
 pipeline_details = {"p_client": None, "ns": None, "cluster": None,
              "project": None, "pipeline": None, "pipeline_run": None}
 PIPELINE_TIMEOUT = 600
-PIPELINE_REPO_URL = "https://github.com/rancher/pipeline-example-go.git"
+PIPELINE_REPO_URL = "https://github.com/rancher/pipeline-example-go.git2"
 
 
 def test_pipeline():
